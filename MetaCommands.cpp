@@ -66,11 +66,23 @@ void processMetaCommand(char* buff){
     }
     else if(buff[1] == GET_THIS_ADDR[0] && buff[2] == GET_THIS_ADDR[1]){
         int addr = getThisAddress();
-        ble.println(addr);
+        char addr_str[5];
+        char out_str[20];
+        itoa(addr, addr_str, 10);
+        strcpy(out_str, "Bridge addr: ");
+        strcat(out_str, addr_str);
+        ble.println(out_str);
+        Serial.println(out_str);
     }
     else if(buff[1] == GET_TARGET_ADDR[0] && buff[2] == GET_TARGET_ADDR[1]){
         int addr = getTargetAddress();
-        ble.println(getTargetAddress());
+        char addr_str[5];
+        char out_str[20];
+        itoa(addr, addr_str, 10);
+        strcpy(out_str, "Target addr: ");
+        strcat(out_str, addr_str);
+        ble.println(out_str);
+        Serial.println(out_str);
     }
     else if(buff[1] == GET_RSSI[0] && buff[2] == GET_RSSI[1]){
         getRSSI();

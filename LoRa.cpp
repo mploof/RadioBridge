@@ -48,6 +48,11 @@ static RHReliableDatagram manager(driver, cur_client_addr);
 
 static bool tt_protocol = true;
 
+static const char* no_reply_str_0 = "No reply."; 
+static const char* no_reply_str_1 = "Is receiver with address ";
+static const char* no_reply_str_2 = " on and in range?";
+static const char* send_failed_str= "Send failed";
+
 //*************************************************//
 //             Interface Functions
 //*************************************************//
@@ -98,13 +103,15 @@ void checkLoRa(void){
             }
             else
             {
-                Serial.print(F("No reply. Is beacon with address "));
+                Serial.print(no_reply_str_0);
+                Serial.print(no_reply_str_1);
                 Serial.print(cur_server_addr);
-                Serial.println(F(" on and in range?"));
+                Serial.println(no_reply_str_2);
 
-                ble.print(F("No reply. Is beacon with address "));
+                ble.print(no_reply_str_0);
+                ble.print(no_reply_str_1);
                 ble.print(cur_server_addr);
-                ble.println(F(" on and in range?"));
+                ble.println(no_reply_str_2);
             }
             Serial.println(F("*************\n"));
             waiting_for_response = false;
@@ -148,12 +155,21 @@ void sendRadioPacket(char* data){
   // Send a message to manager_server
   if (manager.sendtoWait((uint8_t*)data, RH_RF95_MAX_MESSAGE_LEN, cur_server_addr))
   {
-    waiting_for_response = true;
+      waiting_for_response = true;
   }
   else
   {
-    waiting_for_response = false;
-    Serial.println(F("Send failed"));
+      waiting_for_response = false;
+  
+      Serial.println(send_failed_str);
+      Serial.print(no_reply_str_1);
+      Serial.print(cur_server_addr);
+      Serial.println(no_reply_str_2);
+      
+      ble.println(send_failed_str);
+      ble.print(no_reply_str_1);
+      ble.print(cur_server_addr);
+      ble.println(no_reply_str_2);
   }
 }
 
