@@ -24,7 +24,6 @@
 #define RFM95_RST 7
 #define RFM95_INT 3
 
-
 #define DEFAULT_CLIENT_ADDRESS 1
 #define DEFAULT_SERVER_ADDRESS 2
 
@@ -39,12 +38,12 @@
 // Singleton instance of the radio driver
 static RH_RF95 driver(RFM95_CS, RFM95_INT);
 
-static int cur_client_addr = DEFAULT_CLIENT_ADDRESS;
-static int cur_server_addr = DEFAULT_SERVER_ADDRESS;
+static int this_addr = DEFAULT_CLIENT_ADDRESS;
+static int target_addr = DEFAULT_SERVER_ADDRESS;
 static bool waiting_for_response = false;
 
 // Class to manage message delivery and receipt, using the driver declared above
-static RHReliableDatagram manager(driver, cur_client_addr);
+static RHReliableDatagram manager(driver, this_addr);
 
 static bool tt_protocol = true;
 
@@ -105,12 +104,12 @@ void checkLoRa(void){
             {
                 Serial.print(no_reply_str_0);
                 Serial.print(no_reply_str_1);
-                Serial.print(cur_server_addr);
+                Serial.print(target_addr);
                 Serial.println(no_reply_str_2);
 
                 ble.print(no_reply_str_0);
                 ble.print(no_reply_str_1);
-                ble.print(cur_server_addr);
+                ble.print(target_addr);
                 ble.println(no_reply_str_2);
             }
             Serial.println(F("*************\n"));
@@ -129,7 +128,7 @@ void checkLoRa(void){
 
 void sendRadioPacket(char* data){
   Serial.print(F("Sending to address "));
-  Serial.println(cur_server_addr, HEX);
+  Serial.println(target_addr, HEX);
   
   // Adds start and stop characters to the message
   // if using a TinkerTech protocol
@@ -153,7 +152,7 @@ void sendRadioPacket(char* data){
       }
   }
   // Send a message to manager_server
-  if (manager.sendtoWait((uint8_t*)data, RH_RF95_MAX_MESSAGE_LEN, cur_server_addr))
+  if (manager.sendtoWait((uint8_t*)data, RH_RF95_MAX_MESSAGE_LEN, target_addr))
   {
       waiting_for_response = true;
   }
@@ -163,28 +162,28 @@ void sendRadioPacket(char* data){
   
       Serial.println(send_failed_str);
       Serial.print(no_reply_str_1);
-      Serial.print(cur_server_addr);
+      Serial.print(target_addr);
       Serial.println(no_reply_str_2);
       
       ble.println(send_failed_str);
       ble.print(no_reply_str_1);
-      ble.print(cur_server_addr);
+      ble.print(target_addr);
       ble.println(no_reply_str_2);
   }
 }
 
 // Local Functions
 void setTargetAddress(int new_address){
-    cur_server_addr = new_address;
+    target_addr = new_address;
     static const char* lora_str = "Target addr: ";
     ble.print(lora_str);
-    ble.println(cur_server_addr);
+    ble.println(target_addr);
 //    Serial.print(lora_str);
-//    Serial.println(cur_server_addr);
+//    Serial.println(target_addr);
 }
 
 int getTargetAddress(void){
-    return cur_server_addr;
+    return target_addr;
 }
 
 void setThisAddress(int new_address){
