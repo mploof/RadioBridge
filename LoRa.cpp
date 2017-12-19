@@ -4,6 +4,7 @@
 //*************************************************//
 
 #include <Arduino.h>
+#include <EEPROM.h>
 #include "LoRa.h"
 #include "BLE.H"
 
@@ -13,6 +14,7 @@
 #include <RHReliableDatagram.h>
 #include <RH_RF95.h>
 
+#include "EEPROM_Map.h"
 
 //*************************************************//
 //                Constants
@@ -23,9 +25,6 @@
 #define RFM95_CS  4
 #define RFM95_RST 7
 #define RFM95_INT 3
-
-#define DEFAULT_CLIENT_ADDRESS 1
-#define DEFAULT_SERVER_ADDRESS 2
 
 #define START_CHAR  '<'
 #define STOP_CHAR   '>'
@@ -38,14 +37,15 @@
 // Singleton instance of the radio driver
 static RH_RF95 driver(RFM95_CS, RFM95_INT);
 
-static int this_addr = DEFAULT_CLIENT_ADDRESS;
-static int target_addr = DEFAULT_SERVER_ADDRESS;
+static int this_addr    = 0;
+static int target_addr  = 0;
+
 static bool waiting_for_response = false;
 
 // Class to manage message delivery and receipt, using the driver declared above
 static RHReliableDatagram manager(driver, this_addr);
 
-static bool tt_protocol = true;
+static bool tt_protocol;
 
 static const char* no_reply_str_0 = "No reply."; 
 static const char* no_reply_str_1 = "Is receiver with address ";
@@ -79,6 +79,14 @@ void radioSetup(){
     Serial.print(F("Set Freq to: ")); Serial.println(RF95_FREQ);
     
     driver.setTxPower(23, false);
+    tt_protocol   = EEPROM.read(EE_TT_PROTOCOL);
+    this_addr     = EEPROM.read(EE_THIS_ADDRESS + 1) << 8;
+    this_addr    |= EEPROM.read(EE_THIS_ADDRESS);
+    target_addr   = EEPROM.read(EE_TARGET_ADDRESS + 1) << 8;
+    target_addr  |= EEPROM.read(EE_TARGET_ADDRESS);
+    manager.setThisAddress(this_addr);
+    Serial.print("This addr: ");Serial.println(this_addr);
+    Serial.print("Target addr: ");Serial.println(target_addr);
 }
 
 void checkLoRa(void){
@@ -155,6 +163,7 @@ void sendRadioPacket(char* data){
   if (manager.sendtoWait((uint8_t*)data, RH_RF95_MAX_MESSAGE_LEN, target_addr))
   {
       waiting_for_response = true;
+       Serial.println(F("OK!"));
   }
   else
   {
@@ -175,11 +184,6 @@ void sendRadioPacket(char* data){
 // Local Functions
 void setTargetAddress(int new_address){
     target_addr = new_address;
-    static const char* lora_str = "Target addr: ";
-    ble.print(lora_str);
-    ble.println(target_addr);
-//    Serial.print(lora_str);
-//    Serial.println(target_addr);
 }
 
 int getTargetAddress(void){
@@ -188,11 +192,7 @@ int getTargetAddress(void){
 
 void setThisAddress(int new_address){
     manager.setThisAddress(new_address);
-    static const char* bridge_str = "Bridge address: ";
-    ble.print(bridge_str);
-    ble.println(new_address);
-//    Serial.print(bridge_str);
-//    Serial.println(new_address);
+    EEPROM.write(EE_THIS_ADDRESS, new_address);
 }
 
 int getThisAddress(void){

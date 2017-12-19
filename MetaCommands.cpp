@@ -8,18 +8,19 @@
 #include "BLE.H"
 #include "MemoryFree.h"
 
-#define META_CMD_CHAR '@'
+#define META_CMD_CHAR '#'
 
 //*************************************************//
 //              Local Variables
 //*************************************************//
 
-static const char* SET_THIS_ADDR            = "sb";
+static const char* SET_THIS_ADDR            = "sa";
 static const char* SET_TARGET_ADDR          = "st";
-static const char* GET_THIS_ADDR            = "gb";
+static const char* GET_THIS_ADDR            = "ga";
 static const char* GET_TARGET_ADDR          = "gt";
 static const char* GET_RSSI                 = "gr";
-static const char* SET_TINKERTECH_PROTOCOL  = "tt";
+static const char* SET_TINKERTECH_PROTOCOL  = "sp";
+static const char* GET_TINKERTECH_PROTOCOL  = "gp";
 
 //*************************************************//
 //             Interface Functions
@@ -38,7 +39,9 @@ bool isMetaCommand(char* buff){
 void processMetaCommand(char* buff){
     int temp_val;
     char int_str[3];
+    char out_str[20];
     memset(int_str, '\0', 3);
+    memset(out_str, '\0', 20);
     if((buff[1] == SET_THIS_ADDR[0] && buff[2] == SET_THIS_ADDR[1]) ||
        (buff[1] == SET_TARGET_ADDR[0] && buff[2] == SET_TARGET_ADDR[1]))
     {
@@ -55,13 +58,13 @@ void processMetaCommand(char* buff){
             }    
         }
         temp_val = atoi(int_str);
-        Serial.print(F("int_str: "));Serial.println(int_str);
-        Serial.print(F("temp_val: "));Serial.println(temp_val);
         if(valid_address && buff[1] == SET_THIS_ADDR[0] && buff[2] == SET_THIS_ADDR[1]){
             setThisAddress(temp_val);
+            ble.println("Bridge set!");
         }
         else if(valid_address && (buff[1] == SET_TARGET_ADDR[0] && buff[2] == SET_TARGET_ADDR[1])){
             setTargetAddress(temp_val);
+            ble.println("Target set!");
         }
     }
     else if(buff[1] == GET_THIS_ADDR[0] && buff[2] == GET_THIS_ADDR[1]){
@@ -90,6 +93,9 @@ void processMetaCommand(char* buff){
     else if(buff[1] == SET_TINKERTECH_PROTOCOL[0] && buff[2] == SET_TINKERTECH_PROTOCOL[1]){
         temp_val = buff[4] == '0' ? false : true;
         setTTProtocol(temp_val);
+    }
+    else if(buff[1] == GET_RSSI[0] && buff[2] == GET_RSSI[1]){
+        getRSSI();
     }
     else{
         ble.println("Invalid metacommand");
