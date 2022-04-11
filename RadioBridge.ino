@@ -20,7 +20,7 @@
 #include "LoRa.h"
 #include "EEPROM_Map.h"
 
-#define FIRMWARE_VERSION "1.0.0"
+#define FIRMWARE_VERSION "1.1.0"
 
 void setup(void)
 {
@@ -40,9 +40,6 @@ void setup(void)
   }
   bleSetup();
   radioSetup();
-
-  // Automatically adds start and stop characters to outgoing LoRa Messages
-  setTTProtocol(true);
 }
 
 void loop(void)
