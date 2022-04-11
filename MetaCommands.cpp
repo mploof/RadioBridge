@@ -47,7 +47,7 @@ void processMetaCommand(char* buff){
     {
         bool valid_address = true;
         if(buff[4] < '0' || buff[4] > '9'){
-           ble.println("Invalid address");
+           Serial.println("Invalid address");
            valid_address = false;
         }
         else{
@@ -60,11 +60,17 @@ void processMetaCommand(char* buff){
         temp_val = atoi(int_str);
         if(valid_address && buff[1] == SET_THIS_ADDR[0] && buff[2] == SET_THIS_ADDR[1]){
             setThisAddress(temp_val);
-            ble.println("Bridge set!");
+            if(bleActive()) {
+              ble.println("Bridge set!");  
+            }
+            Serial.println("Bridge set!");
         }
         else if(valid_address && (buff[1] == SET_TARGET_ADDR[0] && buff[2] == SET_TARGET_ADDR[1])){
             setTargetAddress(temp_val);
-            ble.println("Target set!");
+            if(bleActive()) {
+              ble.println("Target set!");  
+            }
+            Serial.println("Target set!");
         }
     }
     else if(buff[1] == GET_THIS_ADDR[0] && buff[2] == GET_THIS_ADDR[1]){
@@ -74,7 +80,9 @@ void processMetaCommand(char* buff){
         itoa(addr, addr_str, 10);
         strcpy(out_str, "Bridge addr: ");
         strcat(out_str, addr_str);
-        ble.println(out_str);
+        if(bleActive()) {
+          ble.println(out_str);  
+        }
         Serial.println(out_str);
     }
     else if(buff[1] == GET_TARGET_ADDR[0] && buff[2] == GET_TARGET_ADDR[1]){
@@ -84,7 +92,9 @@ void processMetaCommand(char* buff){
         itoa(addr, addr_str, 10);
         strcpy(out_str, "Target addr: ");
         strcat(out_str, addr_str);
-        ble.println(out_str);
+        if(bleActive()) {
+          ble.println(out_str);  
+        }
         Serial.println(out_str);
     }
     else if(buff[1] == GET_RSSI[0] && buff[2] == GET_RSSI[1]){
@@ -98,9 +108,11 @@ void processMetaCommand(char* buff){
         getRSSI();
     }
     else{
+      if(bleActive()) {
         ble.println("Invalid metacommand");
+      }
+       Serial.println("Invalid metacommand");
     }
     Serial.print("FM: ");
     Serial.println(freeMemory());
 }
-

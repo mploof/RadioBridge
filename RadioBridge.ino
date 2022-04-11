@@ -24,7 +24,7 @@
 
 void setup(void)
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   
   Serial.println(F("*********************************"));
   Serial.println(F("TinkerTech BLE/LoRa Radio Bridge"));
@@ -40,6 +40,9 @@ void setup(void)
   }
   bleSetup();
   radioSetup();
+
+  // Automatically adds start and stop characters to outgoing LoRa Messages
+  setTTProtocol(true);
 }
 
 void loop(void)

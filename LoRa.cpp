@@ -20,12 +20,49 @@
 //                Constants
 //*************************************************//
 
+#if defined(ESP8266)
+  /* for ESP w/featherwing */ 
+  #define RFM95_CS  2    // "E"
+  #define RFM95_RST 16   // "D"
+  #define RFM95_INT 15   // "B"
+
+#elif defined(ADAFRUIT_FEATHER_M0) || defined(ADAFRUIT_FEATHER_M0_EXPRESS) || defined(ARDUINO_SAMD_FEATHER_M0)
+  // Feather M0 w/Radio
+  #define RFM95_CS      8
+  #define RFM95_INT     3
+  #define RFM95_RST     4
+
+#elif defined(ARDUINO_ADAFRUIT_FEATHER_ESP32S2) || defined(ARDUINO_NRF52840_FEATHER) || defined(ARDUINO_NRF52840_FEATHER_SENSE)
+  #define RFM95_INT     9  // "A"
+  #define RFM95_CS      10  // "B"
+  #define RFM95_RST     11  // "C"
+  
+#elif defined(ESP32)  
+  /* ESP32 feather w/wing */
+  #define RFM95_RST     27   // "A"
+  #define RFM95_CS      33   // "B"
+  #define RFM95_INT     12   //  next to A
+
+#elif defined(ARDUINO_NRF52832_FEATHER)
+  /* nRF52832 feather w/wing */
+  #define RFM95_RST     7   // "A"
+  #define RFM95_CS      11   // "B"
+  #define RFM95_INT     31   // "C"
+  
+#elif defined(TEENSYDUINO)
+  /* Teensy 3.x w/wing */
+  #define RFM95_RST     9   // "A"
+  #define RFM95_CS      10   // "B"
+  #define RFM95_INT     4    // "C"
+#else
+  /* TinkerTech BLE Radio Bridge */
+  #define RFM95_CS  4
+  #define RFM95_RST 7
+  #define RFM95_INT 3
+#endif
+
 // Change to 434.0 or other frequency, must match RX's freq!
 #define RF95_FREQ 915.0
-#define RFM95_CS  4
-#define RFM95_RST 7
-#define RFM95_INT 3
-
 #define START_CHAR  '<'
 #define STOP_CHAR   '>'
 
@@ -104,9 +141,12 @@ void checkLoRa(void){
                 Serial.print(F("RSSI: "));
                 Serial.println(driver.lastRssi(), DEC);
                 Serial.println((char*)in_packet);
-                ble.print("Reply from addr: 0x");
-                ble.println(from, HEX);
-                ble.println((char*)in_packet);
+                if(bleActive()){
+                  ble.print("Reply from addr: 0x");
+                  ble.println(from, HEX);
+                  ble.println((char*)in_packet);  
+                }
+                
             }
             else
             {
@@ -114,11 +154,12 @@ void checkLoRa(void){
                 Serial.print(no_reply_str_1);
                 Serial.print(target_addr);
                 Serial.println(no_reply_str_2);
-
-                ble.print(no_reply_str_0);
-                ble.print(no_reply_str_1);
-                ble.print(target_addr);
-                ble.println(no_reply_str_2);
+                if(bleActive()){
+                  ble.print(no_reply_str_0);
+                  ble.print(no_reply_str_1);
+                  ble.print(target_addr);
+                  ble.println(no_reply_str_2);  
+                }                
             }
             Serial.println(F("*************\n"));
             waiting_for_response = false;
@@ -128,7 +169,9 @@ void checkLoRa(void){
             // Keep looking for packets till we run out
             if(manager.recvfromAckTimeout(in_packet, &len, &from)){
                 Serial.println((char*)in_packet);
-                ble.println((char*)in_packet);
+                if(bleActive()){
+                  ble.println((char*)in_packet);
+                }
             }          
         }
     }
@@ -173,11 +216,13 @@ void sendRadioPacket(char* data){
       Serial.print(no_reply_str_1);
       Serial.print(target_addr);
       Serial.println(no_reply_str_2);
-      
-      ble.println(send_failed_str);
-      ble.print(no_reply_str_1);
-      ble.print(target_addr);
-      ble.println(no_reply_str_2);
+
+      if(bleActive()){
+        ble.println(send_failed_str);
+        ble.print(no_reply_str_1);
+        ble.print(target_addr);
+        ble.println(no_reply_str_2);
+      }
   }
 }
 
@@ -202,7 +247,10 @@ int getThisAddress(void){
 void getRSSI(void){
     static const char* rssi_str = "RSSI: ";
     //Serial.print(rssi_str);Serial.println(driver.lastRssi(), DEC);
-    ble.print(rssi_str);ble.println(driver.lastRssi(), DEC);  
+    if(bleActive()){
+      ble.print(rssi_str);ble.println(driver.lastRssi(), DEC);
+    }
+    Serial.print(rssi_str);Serial.println(driver.lastRssi(), DEC);
 }
 
 void setTTProtocol(bool enabled){
@@ -210,12 +258,15 @@ void setTTProtocol(bool enabled){
     static const char* enabled_str  = "TT protocol enabled";
     static const char* disabled_str = "TT protocol disabled";
     if(enabled){
-        ble.println(enabled_str);
-        //Serial.println(enabled_str);
+        if(bleActive()){
+          ble.println(enabled_str);
+        }
+        Serial.println(enabled_str);
     }
     else{
-        ble.println(disabled_str);
-        //Serial.println(disabled_str);
+        if(bleActive()){
+          ble.println(disabled_str);
+        }
+        Serial.println(disabled_str);
     }
 }
-

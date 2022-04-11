@@ -21,5 +21,6 @@ extern Adafruit_BluefruitLE_SPI ble;
 
 void bleSetup(void);
 void checkBLE(void);
+bool bleActive(void);
 
 #endif

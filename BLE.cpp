@@ -61,6 +61,8 @@ Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_
 //             Local Variables
 //*************************************************//
 
+bool ble_active = true;
+
 //*************************************************//
 //             Local Functions
 //*************************************************//
@@ -75,6 +77,10 @@ static void error(const __FlashStringHelper*err) {
 //             Interface Functions
 //*************************************************//
 
+bool bleActive() {
+  return ble_active;
+}
+
 void bleSetup(void){
  //****** Bluefruit Setup ******//
 
@@ -83,53 +89,59 @@ void bleSetup(void){
 
   if ( !ble.begin(VERBOSE_MODE) )
   {
-    error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
+    Serial.println(F("Couldn't find Bluefruit, proceeding in Serial/LoRa bridge mode"));
+    ble_active = false;
   }
-  Serial.println( F("OK!") );
-
-  if ( FACTORYRESET_ENABLE )
+  else 
   {
-    /* Perform a factory reset to make sure everything is in a known state */
-    Serial.println(F("Performing a factory reset: "));
-    if ( ! ble.factoryReset() ){
-      error(F("Couldn't factory reset"));
+    Serial.println( F("OK!") );
+
+    if ( FACTORYRESET_ENABLE )
+    {
+      /* Perform a factory reset to make sure everything is in a known state */
+      Serial.println(F("Performing a factory reset: "));
+      if ( ! ble.factoryReset() ){
+        error(F("Couldn't factory reset BLE module"));
+      }
     }
+  
+    /* Disable command echo from Bluefruit */
+    ble.echo(false);
+  
+    Serial.println(F("Requesting Bluefruit info:"));
+    /* Print Bluefruit information */
+    ble.info();
+  
+    Serial.println(F("Please use Adafruit Bluefruit LE app to connect in UART mode"));
+    Serial.println(F("Then Enter characters to send to Bluefruit"));
+    Serial.println();
+  
+    ble.verbose(false);  // debug info is a little annoying after this point!
+  
+    /* Wait for connection */
+    while (! ble.isConnected()) {
+        delay(500);
+    }
+  
+    Serial.println(F("******************************"));
+  
+    // LED Activity command is only supported from 0.6.6
+    if ( ble.isVersionAtLeast(MINIMUM_FIRMWARE_VERSION) )
+    {
+      // Change Mode LED Activity
+      Serial.println(F("Change LED activity to " MODE_LED_BEHAVIOUR));
+      ble.sendCommandCheckOK("AT+HWModeLED=" MODE_LED_BEHAVIOUR);
+    }
+  
+    // Set module to DATA mode
+    Serial.println( F("Switching to DATA mode!") );
+    ble.setMode(BLUEFRUIT_MODE_DATA);
+  
+    Serial.println(F("******************************"));
+    ble.println("Radio bridge link established!");
   }
-
-  /* Disable command echo from Bluefruit */
-  ble.echo(false);
-
-  Serial.println(F("Requesting Bluefruit info:"));
-  /* Print Bluefruit information */
-  ble.info();
-
-  Serial.println(F("Please use Adafruit Bluefruit LE app to connect in UART mode"));
-  Serial.println(F("Then Enter characters to send to Bluefruit"));
-  Serial.println();
-
-  ble.verbose(false);  // debug info is a little annoying after this point!
-
-  /* Wait for connection */
-  while (! ble.isConnected()) {
-      delay(500);
-  }
-
-  Serial.println(F("******************************"));
-
-  // LED Activity command is only supported from 0.6.6
-  if ( ble.isVersionAtLeast(MINIMUM_FIRMWARE_VERSION) )
-  {
-    // Change Mode LED Activity
-    Serial.println(F("Change LED activity to " MODE_LED_BEHAVIOUR));
-    ble.sendCommandCheckOK("AT+HWModeLED=" MODE_LED_BEHAVIOUR);
-  }
-
-  // Set module to DATA mode
-  Serial.println( F("Switching to DATA mode!") );
-  ble.setMode(BLUEFRUIT_MODE_DATA);
-
-  Serial.println(F("******************************"));
-  ble.println("Radio bridge link established!");
+  
+  
 }
 
 void checkBLE(void){
@@ -137,18 +149,28 @@ void checkBLE(void){
     // Check for user input
     char n, inputs[BUFSIZE+1];
   
-    if (Serial.available())
-    {
-        n = Serial.readBytes(inputs, RADIO_BUFF_SIZE);
-        inputs[n] = 0;
-        // Send characters to Bluefruit
-        Serial.print(F("Sending: "));
-        Serial.println(inputs);
-    
-        // Send input data to host via Bluefruit
-        ble.print(inputs);
+  if (Serial.available())
+  {
+    delay(10);
+    memset(out_packet, '\0', RADIO_BUFF_SIZE);
+    int index = 0;
+    while(Serial.available() && index < RADIO_BUFF_SIZE - 1) {
+      out_packet[index] = Serial.read();
+      index++;
     }
-  
+    // Send characters to LoRa radio
+    Serial.print(F("Sending: "));
+    Serial.println(out_packet);
+
+    if(isMetaCommand(out_packet)){
+      processMetaCommand(out_packet);
+    }
+    else{
+      sendRadioPacket(out_packet);
+    }
+  }
+
+  else if(ble_active) {
     if(ble.available())
     {
         // Clear the outgoing radio packet
@@ -172,4 +194,5 @@ void checkBLE(void){
             sendRadioPacket(out_packet);
         }
     }
+  }
 }
