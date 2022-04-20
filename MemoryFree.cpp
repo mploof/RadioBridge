@@ -4,6 +4,7 @@
 #include <WProgram.h>
 #endif
 
+#if !defined(ADAFRUIT_FEATHER_M0) && !defined(ADAFRUIT_FEATHER_M0_EXPRESS) && !defined(ARDUINO_SAMD_FEATHER_M0)
 extern unsigned int __heap_start;
 extern void *__brkval;
 
@@ -42,3 +43,4 @@ int freeMemory() {
   }
   return free_memory;
 }
+#endif

@@ -113,6 +113,8 @@ void processMetaCommand(char* buff){
       }
        Serial.println("Invalid metacommand");
     }
+#if !defined(ADAFRUIT_FEATHER_M0) && !defined(ADAFRUIT_FEATHER_M0_EXPRESS) && !defined(ARDUINO_SAMD_FEATHER_M0)
     Serial.print("FM: ");
     Serial.println(freeMemory());
+#endif
 }

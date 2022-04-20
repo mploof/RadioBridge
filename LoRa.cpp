@@ -4,13 +4,17 @@
 //*************************************************//
 
 #include <Arduino.h>
-#include <EEPROM.h>
+#if defined(ADAFRUIT_FEATHER_M0) || defined(ADAFRUIT_FEATHER_M0_EXPRESS) || defined(ARDUINO_SAMD_FEATHER_M0)
+  #include <FlashAsEEPROM.h>
+  #include <FlashStorage.h>
+#else  
+  #include <EEPROM.h>
+#endif
 #include "LoRa.h"
 #include "BLE.H"
 
 // LoRa Headers
 #include <SPI.h>
-#include <SoftwareSerial.h>
 #include <RHReliableDatagram.h>
 #include <RH_RF95.h>
 
@@ -133,7 +137,7 @@ void checkLoRa(void){
         uint8_t from;
         if(waiting_for_response){
             // Now wait for a reply from the server
-            if (manager.recvfromAckTimeout(in_packet, &len, 2000, &from))
+            if (manager.recvfromAckTimeout((uint8_t*)in_packet, &len, 2000, &from))
             {
                 Serial.println(F("*************"));
                 Serial.print(F("got reply from address: 0x"));
@@ -167,7 +171,7 @@ void checkLoRa(void){
         // Looking for additional info sent during response
         else{
             // Keep looking for packets till we run out
-            if(manager.recvfromAckTimeout(in_packet, &len, &from)){
+            if(manager.recvfromAckTimeout((uint8_t*)in_packet, &len, 2000, &from)){
                 Serial.println((char*)in_packet);
                 if(bleActive()){
                   ble.println((char*)in_packet);

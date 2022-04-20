@@ -1,10 +1,15 @@
 // Main Arduino Header
 #include <Arduino.h>
-#include <EEPROM.h>
+#if defined(ADAFRUIT_FEATHER_M0) || defined(ADAFRUIT_FEATHER_M0_EXPRESS) || defined(ARDUINO_SAMD_FEATHER_M0)
+  #include <FlashAsEEPROM.h>
+  #include <FlashStorage.h>
+#else  
+  #include <EEPROM.h>
+#endif
+
 
 // LoRa Headers
 #include <SPI.h>
-#include <SoftwareSerial.h>
 #include <RHReliableDatagram.h>
 #include <RH_RF95.h>
 
